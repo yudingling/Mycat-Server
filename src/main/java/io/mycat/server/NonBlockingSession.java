@@ -464,9 +464,9 @@ public class NonBlockingSession implements Session {
             conn.setAttachment(node);
             return true;
         } else {
-            // slavedb connection and can't use anymore ,release it
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("release slave connection,can't be used in trasaction  "
+            // Previous connection and can't use anymore ,release it
+            if (LOGGER.isWarnEnabled()) {
+                LOGGER.warn("Release previous connection,can't be used in trasaction  "
                         + conn + " for " + node);
             }
             releaseConnection(node, LOGGER.isDebugEnabled(), false);
@@ -607,5 +607,25 @@ public class NonBlockingSession implements Session {
 		this.middlerResultHandler = middlerResultHandler;
 	}
 
-    
+    public void setAutoCommitStatus() {
+		/* 1.  事务结束后,xa事务结束    */
+		if(this.getXaTXID()!=null){
+			this.setXATXEnabled(false);
+		}
+		/* 2. preAcStates 为true,事务结束后,需要设置为true。preAcStates 为ac上一个状态    */
+		if(this.getSource().isPreAcStates()&&!this.getSource().isAutocommit()){
+			this.getSource().setAutocommit(true);
+        }
+		this.getSource().clearTxInterrupt();
+
+    }
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		StringBuilder sb = new StringBuilder();
+		for (BackendConnection backCon : target.values()) {
+			sb.append(backCon).append("\r\n");
+		}
+		return sb.toString();
+	}
 }

@@ -724,7 +724,7 @@ public class JDBCConnection implements BackendConnection {
 			justForHeartbeat(sql);
 		}    else
 		{
-			throw new UnsupportedEncodingException("unsupported yet ");
+			throw new UnsupportedOperationException("global seq is not unsupported in jdbc driver yet ");
 		}
 	}
 	private void justForHeartbeat(String sql)
@@ -870,6 +870,16 @@ public class JDBCConnection implements BackendConnection {
 	public void discardClose(String reason) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public void query(String sql, int charsetIndex) {
+		try {
+			query(sql);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			LOGGER.debug("UnsupportedEncodingException :"+ e.getMessage());
+		}		
 	}
 	
 	

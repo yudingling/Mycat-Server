@@ -76,6 +76,9 @@ public final class RouteResultsetNode implements Serializable , Comparable<Route
 	public Boolean getRunOnSlave() {
 		return runOnSlave;
 	}
+	public String getRunOnSlaveDebugInfo() {
+		return runOnSlave == null?" default ":Boolean.toString(runOnSlave);
+	}
 	public boolean isUpdateSql() {
 		int type=sqlType;
 		return ServerParse.INSERT==type||ServerParse.UPDATE==type||ServerParse.DELETE==type||ServerParse.DDL==type;
@@ -280,7 +283,7 @@ public final class RouteResultsetNode implements Serializable , Comparable<Route
 			return 1;
 		}
 		int c = this.name.compareTo(obj.name);
-		if(!this.isDisctTable()){
+		if(!this.isDisctTable()||obj.subTableName == null){
 			return c;
 		}else{
 			if(c==0){
