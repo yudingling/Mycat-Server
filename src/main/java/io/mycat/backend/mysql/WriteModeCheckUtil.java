@@ -13,7 +13,7 @@ public class WriteModeCheckUtil {
 			
 			if(!conn.isFromSlaveDB() && mysqlConn.getPool().getConfig().isCheckWriteMode()){
 				if(isReadOnlyError(err, errMsg)){
-					conn.close("the connection was unavailable for writting and it will be closed due to checkWriteMode was true and created from write host");
+					conn.close("the connection was unavailable for writing and it will be closed due to checkWriteMode was true and being created from write host");
 				}
 			}
 		}
