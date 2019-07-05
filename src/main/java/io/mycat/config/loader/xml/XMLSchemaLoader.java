@@ -36,6 +36,8 @@ import io.mycat.util.DecryptUtil;
 import io.mycat.util.ObjectUtil;
 import io.mycat.util.SplitUtil;
 import io.mycat.util.StringUtil;
+
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -679,7 +681,10 @@ public class XMLSchemaLoader implements SchemaLoader {
 
         String weightStr = node.getAttribute("weight");
         int weight = "".equals(weightStr) ? PhysicalDBPool.WEIGHT : Integer.parseInt(weightStr);
-
+        
+        String checkWriteModeStr = node.getAttribute("checkWriteMode");
+        boolean checkWriteMode = StringUtils.isNotEmpty(checkWriteModeStr) ? Boolean.parseBoolean(checkWriteModeStr) : false;
+ 
         String ip = null;
         int port = 0;
         if (empty(nodeHost) || empty(nodeUrl) || empty(user)) {
@@ -711,6 +716,7 @@ public class XMLSchemaLoader implements SchemaLoader {
         conf.setFilters(filters);
         conf.setLogTime(logTime);
         conf.setWeight(weight);    //新增权重
+        conf.setCheckWriteMode(checkWriteMode);
         return conf;
     }
 

@@ -38,7 +38,8 @@ public class DBHostConfig {
 	private String dbType;
 	private String filters="mergeStat";
 	private long logTime = 300000;
-	private int weight;				
+	private int weight;
+	private boolean checkWriteMode = false;
 
 	public String getDbType() {
 		return dbType;
@@ -132,6 +133,14 @@ public class DBHostConfig {
 
 	public String getEncryptPassword() {
 		return this.encryptPassword;
+	}
+
+	public boolean isCheckWriteMode() {
+		return checkWriteMode;
+	}
+
+	public void setCheckWriteMode(boolean checkWriteMode) {
+		this.checkWriteMode = checkWriteMode;
 	}
 
 	@Override

@@ -38,6 +38,7 @@ import io.mycat.MycatServer;
 import io.mycat.backend.BackendConnection;
 import io.mycat.backend.datasource.PhysicalDBNode;
 import io.mycat.backend.mysql.LoadDataUtil;
+import io.mycat.backend.mysql.WriteModeCheckUtil;
 import io.mycat.config.ErrorCode;
 import io.mycat.config.MycatConfig;
 import io.mycat.config.model.SchemaConfig;
@@ -295,6 +296,8 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 		}
 		
 		recycleResources();
+		
+		WriteModeCheckUtil.check(errPkg, errmgs, conn);
 	}
 
 

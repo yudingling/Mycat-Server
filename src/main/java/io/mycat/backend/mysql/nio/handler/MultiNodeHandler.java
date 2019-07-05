@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 import io.mycat.backend.BackendConnection;
+import io.mycat.backend.mysql.WriteModeCheckUtil;
 import io.mycat.config.ErrorCode;
 import io.mycat.net.mysql.ErrorPacket;
 import io.mycat.server.NonBlockingSession;
@@ -142,6 +143,8 @@ abstract class MultiNodeHandler implements ResponseHandler, Terminatable {
 		LOGGER.warn(this.toString() +"error response from " + conn + " err " + errmsg + " code:" + err.errno);
 		
 		this.tryErrorFinished(this.decrementCountBy(1));
+		
+		WriteModeCheckUtil.check(err, errmsg, conn);
 	}
 
 	public boolean clearIfSessionClosed(NonBlockingSession session) {
