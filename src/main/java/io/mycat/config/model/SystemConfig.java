@@ -44,6 +44,10 @@ public final class SystemConfig {
 	private static final short DEFAULT_BUFFER_CHUNK_SIZE = 4096;
 	private static final int DEFAULT_BUFFER_POOL_PAGE_SIZE = 512*1024*4;
 	private static final short DEFAULT_BUFFER_POOL_PAGE_NUMBER = 64;
+
+
+
+	private int removeGraveAccent;
 	private int processorBufferLocalPercent;
 	private static final int DEFAULT_PROCESSORS = Runtime.getRuntime().availableProcessors();
 	private int frontSocketSoRcvbuf = 1024 * 1024;
@@ -136,6 +140,8 @@ public final class SystemConfig {
 	public static final int SEQUENCEHANDLER_LOCAL_TIME = 2;
 	public static final int SEQUENCEHANDLER_ZK_DISTRIBUTED = 3;
 	public static final int SEQUENCEHANDLER_ZK_GLOBAL_INCREMENT = 4;
+	public static final int SEQUENCEHANDLER_DEF_GLOBAL_INCREMENT = 5;
+	public static String sequenceHanlderClass = null;
 	public static final String SEQUENCEHANDLER_PATTERN = "(?:(\\s*next\\s+value\\s+for\\s*MYCATSEQ_(\\w+))(,|\\)|\\s)*)+";
 	
 	private final int DEFAULT_SEQUNCE_MYSQL_RETRY_COUT=4;  //mysql全局序列默认重试次数
@@ -143,7 +149,7 @@ public final class SystemConfig {
 
 	private int sequnceMySqlRetryCount = DEFAULT_SEQUNCE_MYSQL_RETRY_COUT;
 	private long sequnceMySqlWaitTime = DEFAULT_SEQUNCE_MYSQL_WATI_TIME;
-	
+	private int ignoreUnknownCommand = 0;//io/mycat/net/handler/FrontendCommandHandler.java:忽略未知命令
 	
 	
 	/*
@@ -151,7 +157,7 @@ public final class SystemConfig {
 	 * 比如MariaDB目前版本号已经到10.1.x，但是其驱动程序仍然兼容官方的MySQL,因此这里版本号只需要MySQL官方的版本号即可。
 	 */
 	public static final String[] MySQLVersions = { "5.5", "5.6", "5.7" };
-	private int sequnceHandlerType = SEQUENCEHANDLER_LOCALFILE;
+	private int sequenceHandlerType = SEQUENCEHANDLER_LOCALFILE;
 	private String sqlInterceptor = "io.mycat.server.interceptor.impl.DefaultSqlInterceptor";
 	private String sqlInterceptorType = "select";
 	private String sqlInterceptorFile = System.getProperty("user.dir")+"/logs/sql.txt";
@@ -253,6 +259,8 @@ public final class SystemConfig {
 	private int nonePasswordLogin = DEFAULT_NONEPASSWORDLOGIN ;
 
 	private final static int DEFAULT_NONEPASSWORDLOGIN = 0;
+
+	private int parallExecute;
 	
 	public String getDefaultSqlParser() {
 		return defaultSqlParser;
@@ -293,7 +301,7 @@ public final class SystemConfig {
 		this.parserCommentVersion = DEFAULT_PARSER_COMMENT_VERSION;
 		this.sqlRecordCount = DEFAULT_SQL_RECORD_COUNT;
 		this.glableTableCheckPeriod = DEFAULT_GLOBAL_TABLE_CHECK_PERIOD;
-		this.useOffHeapForMerge = 1;
+		this.useOffHeapForMerge = 0;
 		this.memoryPageSize = MEMORY_PAGE_SIZE;
 		this.spillsFileBufferSize = SPILLS_FILE_BUFFER_SIZE;
 		this.useStreamOutput = 0;
@@ -303,6 +311,9 @@ public final class SystemConfig {
 		this.XARecoveryLogBaseName ="tmlog";
 
 		this.maxPreparedStmtCount = DEFAULT_MAX_PREPAREDSTMT_COUNT;
+		this.ignoreUnknownCommand = 0;
+		this.parallExecute = 0;
+		this.removeGraveAccent = 1;
 	}
 
 	public void setMaxPreparedStmtCount(int maxPreparedStmtCount){
@@ -405,12 +416,12 @@ public final class SystemConfig {
 		this.sqlInterceptor = sqlInterceptor;
 	}
 
-	public int getSequnceHandlerType() {
-		return sequnceHandlerType;
+	public int getSequenceHandlerType() {
+		return sequenceHandlerType;
 	}
 
-	public void setSequnceHandlerType(int sequnceHandlerType) {
-		this.sequnceHandlerType = sequnceHandlerType;
+	public void setSequenceHandlerType(int sequenceHandlerType) {
+		this.sequenceHandlerType = sequenceHandlerType;
 	}
 
 	public int getPacketHeaderSize() {
@@ -915,7 +926,7 @@ public final class SystemConfig {
 				+ ", flowControlRejectStrategy="+flowControlRejectStrategy
 				+ ", clearBigSqLResultSetMapMs="+clearBigSqLResultSetMapMs
 				+ ", defaultMaxLimit=" + defaultMaxLimit
-				+ ", sequnceHandlerType=" + sequnceHandlerType
+				+ ", sequenceHandlerType=" + sequenceHandlerType
 				+ ", sqlInterceptor=" + sqlInterceptor
 				+ ", sqlInterceptorType=" + sqlInterceptorType
 				+ ", sqlInterceptorFile=" + sqlInterceptorFile
@@ -925,7 +936,11 @@ public final class SystemConfig {
 				+ ", usingAIO=" + usingAIO 
 				+ ", packetHeaderSize=" + packetHeaderSize 
 				+ ", maxPacketSize=" + maxPacketSize
-				+ ", mycatNodeId=" + mycatNodeId + "]";
+				+ ", mycatNodeId=" + mycatNodeId
+				+ ",ignoreUnknownCommand="+ignoreUnknownCommand
+				+ ",parallExecute="+parallExecute
+				+ ",removeGraveAccent="+ removeGraveAccent
+				+ "]";
 	}
 
 
@@ -1014,5 +1029,35 @@ public final class SystemConfig {
 	}
 	public void setSequnceHandlerPattern(String sequnceHandlerPattern) {
 		this.sequnceHandlerPattern = sequnceHandlerPattern;
+	}
+
+	public  String getSequenceHanlderClass() {
+		return sequenceHanlderClass;
+	}
+	public void setSequenceHanlderClass(String value) {
+		 sequenceHanlderClass = value;
+	}
+
+	public int getIgnoreUnknownCommand() {
+		return ignoreUnknownCommand;
+	}
+
+	public void setIgnoreUnknownCommand(int ignoreUnknownCommand) {
+		this.ignoreUnknownCommand = ignoreUnknownCommand;
+	}
+
+	public int getParallExecute() {
+		return parallExecute;
+	}
+
+	public void setParallExecute(int parallExecute) {
+		this.parallExecute = parallExecute;
+	}
+
+	public int getRemoveGraveAccent() {
+		return removeGraveAccent;
+	}
+	public void setRemoveGraveAccent(int removeGraveAccent) {
+		this.removeGraveAccent = removeGraveAccent;
 	}
 }

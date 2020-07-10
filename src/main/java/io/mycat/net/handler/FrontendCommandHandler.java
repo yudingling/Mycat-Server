@@ -23,12 +23,16 @@
  */
 package io.mycat.net.handler;
 
+import io.mycat.MycatServer;
 import io.mycat.backend.mysql.MySQLMessage;
 import io.mycat.config.ErrorCode;
+import io.mycat.config.MycatConfig;
 import io.mycat.net.FrontendConnection;
 import io.mycat.net.NIOHandler;
 import io.mycat.net.mysql.MySQLPacket;
 import io.mycat.statistic.CommandCount;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 前端命令处理器
@@ -37,6 +41,7 @@ import io.mycat.statistic.CommandCount;
  */
 public class FrontendCommandHandler implements NIOHandler
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FrontendCommandHandler.class);
 
     protected final FrontendConnection source;
     protected final CommandCount commands;
@@ -106,11 +111,20 @@ public class FrontendCommandHandler implements NIOHandler
                 commands.doHeartbeat();
                 source.heartbeat(data);
                 break;
+            case MySQLPacket.COM_FIELD_LIST:
+                source.fieldList(data);
+                break;
             default:
-                     commands.doOther();
-                     source.writeErrMessage(ErrorCode.ER_UNKNOWN_COM_ERROR,
-                             "Unknown command");
-
+                commands.doOther();
+                MycatConfig config = MycatServer.getInstance().getConfig();
+                if( config.getSystem().getIgnoreUnknownCommand()==1){
+                    LOGGER.warn("Unknown command:{}",data[4]);
+                    source.ping();
+                }else {
+                    LOGGER.error("Unknown command:{}",new String(data));
+                    source.writeErrMessage(ErrorCode.ER_UNKNOWN_COM_ERROR,
+                            "Unknown command");
+                }
         }
     }
 

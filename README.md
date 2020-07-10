@@ -16,8 +16,19 @@ Mycat’s target is to smoothly migrate the current stand-alone database and app
 
 MyCAT1.6不支持一个SQL包含多个语句,但是正在开发的2.0是支持的
 
+旧Mycat升级fastjson，把pom.xml中fastjson的版本更改即可
+
+全局序列号语法
+
+```sql
+INSERT INTO `travelrecord` (`id`,user_id) VALUES ('next value for MYCATSEQ_GLOBAL',"xxx");
+```
+
 更新Druid 1.1.10版本的分支独立维护在
 https://github.com/MyCATApache/Mycat-Server/tree/1.6.6-druid
+
+docker-mycat(1.65)
+https://github.com/dekuan/docker.mycat
 
 MyCAT2.0开发中
 https://github.com/MyCATApache/Mycat2
@@ -175,7 +186,7 @@ wrapper.java.additional.1=-DMYCAT_HOME=.
 
 wrapper.java.additional.2=-server
 
-wrapper.java.additional.3=-XX:MaxPermSize=64M
+#wrapper.java.additional.3=-XX:MaxPermSize=64M
 
 wrapper.java.additional.4=-XX:+AggressiveOpts
 

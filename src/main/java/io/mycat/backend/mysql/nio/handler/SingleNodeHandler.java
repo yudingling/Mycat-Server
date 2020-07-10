@@ -72,19 +72,19 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 	
 	// only one thread access at one time no need lock
 	private volatile byte packetId;
-	private volatile ByteBuffer buffer;
+	protected volatile ByteBuffer buffer;
 	private volatile boolean isRunning;
 	private Runnable terminateCallBack;
-	private long startTime;
-	private long netInBytes;
-	private long netOutBytes;
+	protected long startTime;
+	protected long netInBytes;
+	protected long netOutBytes;
 	private long selectRows;
-	private long affectedRows;
+	protected long affectedRows;
 	protected final AtomicBoolean errorRepsponsed = new AtomicBoolean(false);
 	
 	private boolean prepared;
-	private int fieldCount;
-	private List<FieldPacket> fieldPackets = new ArrayList<FieldPacket>();
+	protected int fieldCount;
+	protected List<FieldPacket> fieldPackets = new ArrayList<FieldPacket>();
 
     private volatile boolean isDefaultNodeShowTable;
     private volatile boolean isDefaultNodeShowFullTable;
@@ -124,7 +124,18 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 		}
         
 	}
-
+	public NonBlockingSession getSession() {
+		return this.session;
+	}
+	public RouteResultsetNode getRouteResultsetNode() {
+		return this.node;
+	}
+	public RouteResultset getRouteResultset(){
+		return this.rrs;
+	}
+	public ByteBuffer getBuffer() {
+		return this.buffer;
+	}
 	@Override
 	public void terminate(Runnable callback) {
 		boolean zeroReached = false;
@@ -140,7 +151,7 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 		}
 	}
 
-	private void endRunning() {
+	protected void endRunning() {
 		Runnable callback = null;
 		if (isRunning) {
 			isRunning = false;
@@ -166,7 +177,12 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 		startTime=System.currentTimeMillis();
 		ServerConnection sc = session.getSource();
 		this.isRunning = true;
-		this.packetId = 0;
+		if (rrs.isLoadData()) {
+			this.packetId = session.getSource().getLoadDataInfileHandler().getLastPackId();
+		} else {
+			this.packetId = 0;
+		}
+
 		final BackendConnection conn = session.getTarget(node);
 		LOGGER.debug("rrs.getRunOnSlave() " + rrs.getRunOnSlaveDebugInfo());
 		node.setRunOnSlave(rrs.getRunOnSlave());	// 实现 master/slave注解
@@ -224,9 +240,10 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 	private void executeException(BackendConnection c, Exception e) {
 		ErrorPacket err = new ErrorPacket();
 		err.packetId = ++packetId;
-		err.errno = ErrorCode.ERR_FOUND_EXCEPION;
-		err.message = StringUtil.encode(e.toString(), session.getSource().getCharset());
-
+		err.errno = ErrorCode.ERR_FOUND_EXCEPTION;
+		String message = e.toString();
+		LOGGER.error(message);
+		err.message = StringUtil.encode(message, session.getSource().getCharset());
 		this.backConnectionErr(err, c);
 	}
 
@@ -294,7 +311,6 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 		if (errorRepsponsed.compareAndSet(false, true)) {
 			source.writeErrMessage(errPkg.errno, new String(errPkg.message));
 		}
-		
 		recycleResources();
 		
 		WriteModeCheckUtil.check(errPkg, errmgs, conn);
@@ -319,8 +335,8 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 			ok.read(data);
             boolean isCanClose2Client =(!rrs.isCallStatement()) ||(rrs.isCallStatement() &&!rrs.getProcedure().isResultSimpleValue());
 			if (rrs.isLoadData()) {				
-				byte lastPackId = source.getLoadDataInfileHandler().getLastPackId();
-				ok.packetId = ++lastPackId;// OK_PACKET
+				// byte lastPackId = source.getLoadDataInfileHandler().getLastPackId();
+				ok.packetId = ++packetId;// OK_PACKET
 				source.getLoadDataInfileHandler().clear();
 				
 			} else if (isCanClose2Client) {
@@ -349,7 +365,7 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 			// add by lian
 			// 解决sql统计中写操作永远为0
 			QueryResult queryResult = new QueryResult(session.getSource().getUser(), 
-					rrs.getSqlType(), rrs.getStatement(), affectedRows, netInBytes, netOutBytes, startTime, System.currentTimeMillis(),0);
+					rrs.getSqlType(), rrs.getStatement(), affectedRows, netInBytes, netOutBytes, startTime, System.currentTimeMillis(),0, source.getHost());
 			QueryResultDispatcher.dispatchQuery( queryResult );
 		}
 	}
@@ -392,7 +408,7 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 		//TODO: add by zhuam
 		//查询结果派发
 		QueryResult queryResult = new QueryResult(session.getSource().getUser(), 
-				rrs.getSqlType(), rrs.getStatement(), affectedRows, netInBytes, netOutBytes, startTime, System.currentTimeMillis(),resultSize);
+				rrs.getSqlType(), rrs.getStatement(), affectedRows, netInBytes, netOutBytes, startTime, System.currentTimeMillis(),resultSize, source.getHost());
 		QueryResultDispatcher.dispatchQuery( queryResult );
 		
 	}
@@ -402,7 +418,7 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 	 * 
 	 * @return
 	 */
-	private ByteBuffer allocBuffer() {
+	protected ByteBuffer allocBuffer() {
 		if (buffer == null) {
 			buffer = session.getSource().allocate();
 		}
@@ -535,6 +551,7 @@ public class SingleNodeHandler implements ResponseHandler, Terminatable, LoadDat
 		ErrorPacket err = new ErrorPacket();
 		err.packetId = ++packetId;
 		err.errno = ErrorCode.ER_ERROR_ON_CLOSE;
+		LOGGER.error(reason);
 		err.message = StringUtil.encode(reason, session.getSource()
 				.getCharset());
 		this.backConnectionErr(err, conn);

@@ -146,6 +146,7 @@ public class XMLSchemaLoader implements SchemaLoader {
             //读取各个属性
             String name = schemaElement.getAttribute("name");
             String dataNode = schemaElement.getAttribute("dataNode");
+            String randomDataNode = schemaElement.getAttribute("randomDataNode");
             String checkSQLSchemaStr = schemaElement.getAttribute("checkSQLschema");
             String sqlMaxLimitStr = schemaElement.getAttribute("sqlMaxLimit");
             int sqlMaxLimit = -1;
@@ -180,7 +181,7 @@ public class XMLSchemaLoader implements SchemaLoader {
             }
 
             SchemaConfig schemaConfig = new SchemaConfig(name, dataNode,
-                    tables, sqlMaxLimit, "true".equalsIgnoreCase(checkSQLSchemaStr));
+                    tables, sqlMaxLimit, "true".equalsIgnoreCase(checkSQLSchemaStr),randomDataNode);
 
             //设定DB类型，这对之后的sql语句路由解析有帮助
             if (defaultDbType != null) {
@@ -300,8 +301,28 @@ public class XMLSchemaLoader implements SchemaLoader {
         final String schemaName = node.getAttribute("name");
         Map<String, TableConfig> tables = new TableConfigMap();
         NodeList nodeList = node.getElementsByTagName("table");
+        List<Element> list = new ArrayList<>();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Element tableElement = (Element) nodeList.item(i);
+            String tableNameElement = tableElement.getAttribute("name").toUpperCase();
+            if("true".equalsIgnoreCase(tableElement.getAttribute("splitTableNames"))){
+                String[] split = tableNameElement.split(",");
+                for (String name : split) {
+                    Element node1 = (Element)tableElement.cloneNode(true);
+                    node1.setAttribute("name",name);
+                    list.add(node1);
+                }
+            }else {
+                list.add(tableElement);
+            }
+        }
+        loadTable(schemaName, tables, list);
+        return tables;
+    }
+
+    private void loadTable(String schemaName, Map<String, TableConfig> tables,  List<Element>  nodeList) {
+        for (int i = 0; i < nodeList.size(); i++) {
+            Element tableElement = (Element) nodeList.get(i);
             String tableNameElement = tableElement.getAttribute("name").toUpperCase();
 
             //TODO:路由, 增加对动态日期表的支持
@@ -415,7 +436,6 @@ public class XMLSchemaLoader implements SchemaLoader {
                 processChildTables(tables, table, dataNode, tableElement);
             }
         }
-        return tables;
     }
 
     private String getNewRuleName(String schemaName, String tableName, String name) {
